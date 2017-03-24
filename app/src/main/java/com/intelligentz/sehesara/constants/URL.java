@@ -6,4 +6,5 @@ package com.intelligentz.sehesara.constants;
 
 public class URL {
     public static final String SEARCH_URL = "http://ideamarthosting.dialog.lk:9183/sahasara/ideabiz/search";
+    public static final String ROUTE_RETRIEVAL_URL = "http://ideamarthosting.dialog.lk:9183/sahasara/ideabiz/routes";
 }
