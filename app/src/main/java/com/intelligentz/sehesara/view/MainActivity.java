@@ -39,6 +39,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.gson.JsonObject;
 import com.intelligentz.sehesara.R;
 import com.intelligentz.sehesara.constants.Data;
 import com.intelligentz.sehesara.constants.Tags;
@@ -129,7 +130,7 @@ public class MainActivity extends FragmentActivity implements
                         R.layout.layout_spinner, heading);
                 headingSpinner.setAdapter(headingAdaptor);
                 final Animation slideUp = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
-                final Animation slideUp2 = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_left);
+                final Animation slideUp2 = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_up);
                 if (headingLayout.getVisibility() == View.INVISIBLE) {
                     headingLayout.startAnimation(slideUp);
                     headingLayout.setVisibility(View.VISIBLE);
@@ -186,12 +187,12 @@ public class MainActivity extends FragmentActivity implements
         headingLayout.animate()
                 .translationY(-headingLayout.getHeight())
                 .alpha(0.0f);
-        routeLayout.setVisibility(View.VISIBLE);
-        routeLayout.setAlpha(1.0f);
-// Start the animation
-        routeLayout.animate()
-                .translationY(-routeLayout.getHeight())
-                .alpha(0.0f);
+//        routeLayout.setVisibility(View.VISIBLE);
+//        routeLayout.setAlpha(1.0f);
+//// Start the animation
+//        routeLayout.animate()
+//                .translationY(-routeLayout.getHeight())
+//                .alpha(0.0f);
     }
     private void showViews(){
 // Start the animation
@@ -237,7 +238,6 @@ public class MainActivity extends FragmentActivity implements
     }
 
     protected synchronized void buildGoogleApiClient() {
-        Toast.makeText(this, "buildGoogleApiClient", Toast.LENGTH_SHORT).show();
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -268,6 +268,7 @@ public class MainActivity extends FragmentActivity implements
             markerOptions.title("You Are Here");
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.man_icon));
             currLocationMarker = mGoogleMap.addMarker(markerOptions);
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
         }
 
         mLocationRequest = new LocationRequest();
@@ -335,17 +336,17 @@ public class MainActivity extends FragmentActivity implements
 
             try {
                 // Building Parameters
-                List<NameValuePair> params = new ArrayList<NameValuePair>();
-                params.add(new BasicNameValuePair("route", route));
-                params.add(new BasicNameValuePair("heading", heading));
-                params.add(new BasicNameValuePair("lat", String.valueOf(latLng.latitude)));
-                params.add(new BasicNameValuePair("long", String.valueOf(latLng.longitude)));
+                JsonObject body = new JsonObject();
+                body.addProperty("route", route);
+                body.addProperty("heading", heading);
+                body.addProperty("lat", String.valueOf(latLng.latitude));
+                body.addProperty("lon", String.valueOf(latLng.longitude));
 
                 Log.d("request!", "starting");
                 // getting product details by making HTTP request
                 JSONParser jsonParser = new JSONParser();
                 JSONObject json = jsonParser.makeHttpRequest(
-                        URL.SEARCH_URL, "POST", params);
+                        URL.SEARCH_URL, "POST", body);
 
                 if (json == null) {
                     return null;
@@ -389,9 +390,16 @@ public class MainActivity extends FragmentActivity implements
 
         protected void onPostExecute(String file_url) {
             // dismiss the dialog once product deleted
-            progressDialog.dismissWithAnimation();
             if (file_url != null){
-                Toast.makeText(MainActivity.this, file_url, Toast.LENGTH_LONG).show();
+                if (busList.isEmpty()){
+                    progressDialog.setTitleText("No Buses!")
+                            .setContentText("Couldn't find any bus near by.")
+                            .setConfirmText("OK")
+                            .setConfirmClickListener(successListener)
+                            .changeAlertType(SweetAlertDialog.WARNING_TYPE);
+                }else {
+                    progressDialog.dismissWithAnimation();
+                }
             }else {
                 progressDialog.setTitleText("Failed!")
                         .setContentText("Couldn't complete the search.")
@@ -444,7 +452,7 @@ public class MainActivity extends FragmentActivity implements
                 success = json.getInt(Tags.TAG_SUCCESS);
                 JSONArray buses = json.getJSONArray("routes");
                 Route route = null;
-                busList = new ArrayList<>();
+                routeList = new ArrayList<>();
                 for (int i = 0; i< buses.length();i++){
                     String name = ((JSONObject)(buses.get(i))).getString("name");
                     String start = ((JSONObject)(buses.get(i))).getString("start");
@@ -510,15 +518,18 @@ public class MainActivity extends FragmentActivity implements
             MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(latLng);
             markerOptions.title(bus.getName());
-            markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_icon));
+            markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_icon_small));
             markerList.add(mGoogleMap.addMarker(markerOptions));
         }
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (Marker marker : markerList) {
             builder.include(marker.getPosition());
         }
+        if (markerList.isEmpty()) {
+            return;
+        }
         LatLngBounds bounds = builder.build();
-        int padding = 30; // offset from edges of the map in pixels
+        int padding = 100; // offset from edges of the map in pixels
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         mGoogleMap.animateCamera(cu);
     }

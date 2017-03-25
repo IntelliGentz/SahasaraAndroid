@@ -42,4 +42,5 @@ dependencies {
     compile 'com.amstronghuang.slider:library:1.1.3@aar'
     compile 'com.github.piotrek1543:CustomSpinner:0.1'
     compile 'cn.pedant.sweetalert:library:1.3'
+    compile 'com.google.code.gson:gson:2.2.+'
 }
