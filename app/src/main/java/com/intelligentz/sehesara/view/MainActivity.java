@@ -75,6 +75,9 @@ public class MainActivity extends FragmentActivity implements
         @Override
         public void onClick(SweetAlertDialog sweetAlertDialog) {
             sweetAlertDialog.dismissWithAnimation();
+            if (viewsHidden) {
+                showViews();
+            }
         }
     };
     private ArrayList<Bus> busList;
@@ -169,12 +172,12 @@ public class MainActivity extends FragmentActivity implements
             @Override
             public void onClick(View view) {
                 hideViews();
-                viewsHidden = true;
                 new PerformSearch().execute();
             }
         });
     }
     private void hideViews(){
+        viewsHidden = true;
         searchBtn.setVisibility(View.VISIBLE);
         searchBtn.setAlpha(1.0f);
 // Start the animation
@@ -187,14 +190,15 @@ public class MainActivity extends FragmentActivity implements
         headingLayout.animate()
                 .translationY(-headingLayout.getHeight())
                 .alpha(0.0f);
-//        routeLayout.setVisibility(View.VISIBLE);
-//        routeLayout.setAlpha(1.0f);
-//// Start the animation
-//        routeLayout.animate()
-//                .translationY(-routeLayout.getHeight())
-//                .alpha(0.0f);
+        routeLayout.setVisibility(View.VISIBLE);
+        routeLayout.setAlpha(1.0f);
+// Start the animation
+        routeLayout.animate()
+                .translationY(-routeLayout.getHeight())
+                .alpha(0.0f);
     }
     private void showViews(){
+        viewsHidden = false;
 // Start the animation
         routeLayout.animate()
                 .translationY(0)
@@ -532,6 +536,9 @@ public class MainActivity extends FragmentActivity implements
         int padding = 100; // offset from edges of the map in pixels
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
         mGoogleMap.animateCamera(cu);
+        if (viewsHidden) {
+            showViews();
+        }
     }
     @Override
     public void onBackPressed() {
