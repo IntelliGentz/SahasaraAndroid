@@ -90,6 +90,7 @@ public class MainActivity extends FragmentActivity implements
     GoogleMap mGoogleMap;
     SupportMapFragment mFragment;
     Marker currLocationMarker;
+    MarkerOptions currentLocationMarkerOption;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -307,6 +308,7 @@ public class MainActivity extends FragmentActivity implements
         markerOptions.title("You Are Here");
         markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.man_icon));
         currLocationMarker = mGoogleMap.addMarker(markerOptions);
+        currentLocationMarkerOption = markerOptions;
         //zoom to current position:
         //mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
 
@@ -330,6 +332,10 @@ public class MainActivity extends FragmentActivity implements
             progressDialog.show();
             route = (String) routeSpinner.getSelectedItem();
             heading = (String) headingSpinner.getSelectedItem();
+            int routeIndex = routeSpinner.getSelectedItemPosition();
+            if (routeList.get(routeIndex).getStartCity().equals(heading)){
+                heading = routeList.get(routeIndex).getEndCity();
+            }
         }
 
         @Override
@@ -517,14 +523,16 @@ public class MainActivity extends FragmentActivity implements
             }
         }
         markerList = new ArrayList<>();
+        LatLng buslatlng;
         for(Bus bus : busList) {
-            latLng = new LatLng(bus.getLatitude(), bus.getLongitude());
+            buslatlng = new LatLng(bus.getLatitude(), bus.getLongitude());
             MarkerOptions markerOptions = new MarkerOptions();
-            markerOptions.position(latLng);
+            markerOptions.position(buslatlng);
             markerOptions.title(bus.getName());
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_icon_small));
             markerList.add(mGoogleMap.addMarker(markerOptions));
         }
+        markerList.add(mGoogleMap.addMarker(currentLocationMarkerOption));
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (Marker marker : markerList) {
             builder.include(marker.getPosition());
