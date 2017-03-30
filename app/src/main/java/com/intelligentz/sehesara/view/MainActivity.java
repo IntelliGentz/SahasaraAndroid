@@ -273,6 +273,7 @@ public class MainActivity extends FragmentActivity implements
             markerOptions.title("You Are Here");
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.man_icon));
             currLocationMarker = mGoogleMap.addMarker(markerOptions);
+            currentLocationMarkerOption = markerOptions;
             mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
         }
 
@@ -532,7 +533,12 @@ public class MainActivity extends FragmentActivity implements
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_icon_small));
             markerList.add(mGoogleMap.addMarker(markerOptions));
         }
-        markerList.add(mGoogleMap.addMarker(currentLocationMarkerOption));
+        Marker user_marker = mGoogleMap.addMarker(currentLocationMarkerOption);
+        if (currLocationMarker !=  null) {
+            currLocationMarker.remove();
+        }
+        currLocationMarker = user_marker;
+        markerList.add(user_marker);
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         for (Marker marker : markerList) {
             builder.include(marker.getPosition());
