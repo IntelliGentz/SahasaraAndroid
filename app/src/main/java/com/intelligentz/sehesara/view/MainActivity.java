@@ -62,7 +62,7 @@ import cn.pedant.SweetAlert.SweetAlertDialog;
 public class MainActivity extends FragmentActivity implements
         OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private Context context;
-    private SearchableSpinner routeSpinner;
+    private SelectiveSpiner routeSpinner;
     private Spinner headingSpinner;
     private AppCompatButton searchBtn;
     private String route;
@@ -120,11 +120,11 @@ public class MainActivity extends FragmentActivity implements
         searchBtn = (AppCompatButton) findViewById(R.id.btn_search);
         headingLayout = (LinearLayout) findViewById(R.id.headingLayout);
         routeLayout = (LinearLayout) findViewById(R.id.route_layout);
-        routeSpinner = (SearchableSpinner) findViewById(R.id.search_spinner);
+        routeSpinner = (SelectiveSpiner) findViewById(R.id.search_spinner);
         ArrayAdapter routeAdaptor = new ArrayAdapter(this,
                 android.R.layout.simple_spinner_dropdown_item, Data.routes);
         routeSpinner.setAdapter(routeAdaptor);
-        routeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        routeSpinner.setOnItemSelectedEvenIfUnchangedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> adapterView, View view, int i, long l) {
                 String[] heading = new String[2];
