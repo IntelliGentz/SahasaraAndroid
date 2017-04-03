@@ -2,16 +2,20 @@ package com.intelligentz.sehesara.view;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.AppCompatButton;
 import android.util.Log;
 import android.view.View;
@@ -20,6 +24,7 @@ import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -71,6 +76,8 @@ public class MainActivity extends FragmentActivity implements
     private LinearLayout routeLayout;
     private boolean viewsHidden = false;
     private SweetAlertDialog progressDialog;
+    private boolean searched = false;
+
     final SweetAlertDialog.OnSweetClickListener successListener = new SweetAlertDialog.OnSweetClickListener() {
         @Override
         public void onClick(SweetAlertDialog sweetAlertDialog) {
@@ -78,6 +85,12 @@ public class MainActivity extends FragmentActivity implements
             if (viewsHidden) {
                 showViews();
             }
+        }
+    };
+    final SweetAlertDialog.OnSweetClickListener errorListener = new SweetAlertDialog.OnSweetClickListener() {
+        @Override
+        public void onClick(SweetAlertDialog sweetAlertDialog) {
+           finish();
         }
     };
     private ArrayList<Bus> busList;
@@ -91,6 +104,9 @@ public class MainActivity extends FragmentActivity implements
     SupportMapFragment mFragment;
     Marker currLocationMarker;
     MarkerOptions currentLocationMarkerOption;
+    private boolean wentToGPSactivstion = false;
+    View mapView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,6 +119,7 @@ public class MainActivity extends FragmentActivity implements
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
+        mapView = mFragment.getView();
         mFragment.getMapAsync(this);
         new LoadRoutes().execute();
     }
@@ -173,7 +190,7 @@ public class MainActivity extends FragmentActivity implements
             @Override
             public void onClick(View view) {
                 hideViews();
-                new PerformSearch().execute();
+                checkNetworkAndLocation();
             }
         });
     }
@@ -236,6 +253,19 @@ public class MainActivity extends FragmentActivity implements
             // for ActivityCompat#requestPermissions for more details.
             return;
         }
+        if (mapView != null &&
+                mapView.findViewById(Integer.parseInt("1")) != null) {
+            // Get the button view
+            View locationButton = ((View) mapView.findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));
+            // and next place it, on bottom right (as Google Maps app)
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams)
+                    locationButton.getLayoutParams();
+            // position on right bottom
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
+            layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM, RelativeLayout.TRUE);
+            layoutParams.setMargins(0, 0, 120, 60);
+        }
+
         mGoogleMap.setMyLocationEnabled(true);
         buildGoogleApiClient();
 
@@ -311,7 +341,9 @@ public class MainActivity extends FragmentActivity implements
         currLocationMarker = mGoogleMap.addMarker(markerOptions);
         currentLocationMarkerOption = markerOptions;
         //zoom to current position:
-        //mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
+        if (!searched) {
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,17));
+        }
 
         //If you only need one location, unregister the listener
         //LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
@@ -336,6 +368,8 @@ public class MainActivity extends FragmentActivity implements
             int routeIndex = routeSpinner.getSelectedItemPosition();
             if (routeList.get(routeIndex).getStartCity().equals(heading)){
                 heading = routeList.get(routeIndex).getEndCity();
+            } else if (routeList.get(routeIndex).getEndCity().equals(heading)){
+                heading = routeList.get(routeIndex).getStartCity();
             }
         }
 
@@ -411,14 +445,15 @@ public class MainActivity extends FragmentActivity implements
                 }else {
                     progressDialog.dismissWithAnimation();
                 }
+                showBusesOnMap();
             }else {
                 progressDialog.setTitleText("Failed!")
-                        .setContentText("Couldn't complete the search.")
+                        .setContentText("Couldn't complete the search. Please check your internet connection.")
                         .setConfirmText("OK")
                         .setConfirmClickListener(successListener)
                         .changeAlertType(SweetAlertDialog.ERROR_TYPE);
             }
-            showBusesOnMap();
+
         }
     }
 
@@ -501,7 +536,7 @@ public class MainActivity extends FragmentActivity implements
                 progressDialog.setTitleText("Failed!")
                         .setContentText("Couldn't connect to the server")
                         .setConfirmText("OK")
-                        .setConfirmClickListener(successListener)
+                        .setConfirmClickListener(errorListener)
                         .changeAlertType(SweetAlertDialog.ERROR_TYPE);
                 return;
             }
@@ -546,6 +581,7 @@ public class MainActivity extends FragmentActivity implements
         if (markerList.isEmpty()) {
             return;
         }
+        searched = true;
         LatLngBounds bounds = builder.build();
         int padding = 100; // offset from edges of the map in pixels
         CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
@@ -560,6 +596,61 @@ public class MainActivity extends FragmentActivity implements
             showViews();
         }else {
             super.onBackPressed();
+        }
+    }
+
+    private void checkNetworkAndLocation(){
+        LocationManager lm = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+        boolean gps_enabled = false;
+        boolean network_enabled = false;
+
+        try {
+            gps_enabled = lm.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {}
+
+        try {
+            network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {}
+
+        if(!gps_enabled || !network_enabled) {
+            // notify user
+            AlertDialog.Builder dialog = new AlertDialog.Builder(context);
+            dialog.setMessage(context.getResources().getString(R.string.gps_network_not_enabled));
+            dialog.setPositiveButton(context.getResources().getString(R.string.open_location_settings), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    Intent myIntent = new Intent( Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                    context.startActivity(myIntent);
+                    wentToGPSactivstion = true;
+                    //get gps
+                    //checkNetworkAndLocation();
+                }
+            });
+            dialog.setNegativeButton(context.getString(R.string.Cancel), new DialogInterface.OnClickListener() {
+
+                @Override
+                public void onClick(DialogInterface paramDialogInterface, int paramInt) {
+                    // TODO Auto-generated method stub
+                    if (viewsHidden) {
+                        showViews();
+                    }
+                }
+            });
+            dialog.show();
+        }
+        else {
+            new PerformSearch().execute();
+        }
+
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (wentToGPSactivstion) {
+            wentToGPSactivstion = false;
+            checkNetworkAndLocation();
         }
     }
 }
