@@ -8,6 +8,7 @@ public class Bus {
     private String name;
     private double latitude;
     private double longitude;
+    private String duration;
 
     public Bus() {
     }
@@ -16,6 +17,13 @@ public class Bus {
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public Bus(String name, double latitude, double longitude, String duration) {
+        this.name = name;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.duration = duration;
     }
 
     public String getName() {
@@ -40,5 +48,13 @@ public class Bus {
 
     public void setLongitude(double longitude) {
         this.longitude = longitude;
+    }
+
+    public String getDuration() {
+        return duration;
+    }
+
+    public void setDuration(String duration) {
+        this.duration = duration;
     }
 }

@@ -117,7 +117,6 @@ public class Splash extends AppCompatActivity {
         try {
             network_enabled = lm.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
         } catch(Exception ex) {}
-        new CheckInternet().execute();
 
         if(!gps_enabled || !network_enabled) {
             // notify user

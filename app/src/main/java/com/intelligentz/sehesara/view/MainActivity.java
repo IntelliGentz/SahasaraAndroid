@@ -408,7 +408,8 @@ public class MainActivity extends FragmentActivity implements
                     String name = ((JSONObject)(buses.get(i))).getString("name");
                     double lat = ((JSONObject)(buses.get(i))).getDouble("lat");
                     double lon = ((JSONObject)(buses.get(i))).getDouble("lon");
-                    bus = new Bus(name,lat,lon);
+                    String duration = ((JSONObject)(buses.get(i))).getString("duration");
+                    bus = new Bus(name,lat,lon,duration);
 
                     busList.add(bus);
                 }
@@ -531,7 +532,7 @@ public class MainActivity extends FragmentActivity implements
             // dismiss the dialog once product deleted
 
             if (file_url != null){
-                Toast.makeText(MainActivity.this, file_url, Toast.LENGTH_LONG).show();
+                //Toast.makeText(MainActivity.this, file_url, Toast.LENGTH_LONG).show();
             } else {
                 progressDialog.setTitleText("Failed!")
                         .setContentText("Couldn't connect to the server")
@@ -564,7 +565,9 @@ public class MainActivity extends FragmentActivity implements
             buslatlng = new LatLng(bus.getLatitude(), bus.getLongitude());
             MarkerOptions markerOptions = new MarkerOptions();
             markerOptions.position(buslatlng);
-            markerOptions.title(bus.getName());
+            String busName = bus.getName().split(",")[0].trim();
+            markerOptions.snippet("Expected arrival: "+bus.getDuration());
+            markerOptions.title("Bus: "+busName);
             markerOptions.icon(BitmapDescriptorFactory.fromResource(R.drawable.bus_icon_small));
             markerList.add(mGoogleMap.addMarker(markerOptions));
         }
